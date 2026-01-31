@@ -1,0 +1,85 @@
+version: 2
+
+project_name: git-trim
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: git-trim
+    main: ./cmd/git-trim
+    binary: git-trim
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.ShortCommit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - docs/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: '{{ incpatch .Version }}-next'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+brews:
+  - repository:
+      owner: dominikospritis
+      name: homebrew-tap
+    name: git-trim
+    homepage: https://github.com/dominikospritis/git-trim
+    description: Automatically clean up merged and stray Git branches
+    license: MIT
+    install: |
+      bin.install "git-trim"
+
+nfpms:
+  - id: packages
+    package_name: git-trim
+    vendor: Dominikos Pritis
+    homepage: https://github.com/dominikospritis/git-trim
+    maintainer: Dominikos Pritis
+    description: Automatically clean up merged and stray Git branches
+    license: MIT
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+
+release:
+  github:
+    owner: dominikospritis
+    name: git-trim
+  draft: true
+  prerelease: auto
