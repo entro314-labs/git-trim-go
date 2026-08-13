@@ -36,3 +36,6 @@ debug.test
 
 # Air (hot reload)
 tmp/
+
+# personal release notes with tokens - never commit
+/tag.md

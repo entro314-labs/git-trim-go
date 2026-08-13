@@ -12,6 +12,8 @@ Automatically clean up local Git branches that have been merged or become stray.
 - Supporting various Git workflows: GitHub flow, git-flow, and triangular (fork-based) workflows
 - Preserving branches attached to worktrees
 - Allowing protected branch patterns via glob syntax
+- Running standard Git garbage collection to prune history and optimize repo size
+- Converting a repository to a shallow clone (depth=1) to save maximum history space
 
 ## Installation
 
@@ -48,6 +50,12 @@ git-trim --no-confirm
 
 # Skip remote update
 git-trim --no-update
+
+# Run Git garbage collection after trimming to prune history
+git-trim --gc
+
+# Truncate the entire local history to a shallow clone to aggressively save space
+git-trim --shallow
 ```
 
 ## Configuration
@@ -63,6 +71,8 @@ git-trim can be configured via command-line flags or git config:
 | `--confirm/--no-confirm` | `trim.confirm` | Require confirmation | true |
 | `--detach/--no-detach` | `trim.detach` | Allow HEAD detachment | true |
 | `--delete` | `trim.delete` | Delete ranges | merged:origin |
+| `--gc` | `trim.gc` | Run aggressive GC after trimming | false |
+| `--shallow` | `trim.shallow` | Truncate history to depth 1 | false |
 
 ### Delete Ranges
 

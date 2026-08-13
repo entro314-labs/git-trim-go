@@ -19,6 +19,8 @@ type Config struct {
 	Detach         bool
 	Delete         DeleteFilter
 	DryRun         bool
+	Gc             bool
+	Shallow        bool
 }
 
 // DefaultConfig returns the default configuration
@@ -32,6 +34,8 @@ func DefaultConfig() *Config {
 		Detach:         true,
 		Delete:         DefaultDeleteFilter(),
 		DryRun:         false,
+		Gc:             false,
+		Shallow:        false,
 	}
 }
 
@@ -227,6 +231,14 @@ func LoadFromGitConfig(ctx context.Context, reader GitConfigReader, cfg *Config)
 			return fmt.Errorf("invalid trim.delete config: %w", err)
 		}
 		cfg.Delete = filter
+	}
+
+	if gc, ok := reader.GetBool(ctx, "trim.gc"); ok {
+		cfg.Gc = gc
+	}
+
+	if shallow, ok := reader.GetBool(ctx, "trim.shallow"); ok {
+		cfg.Shallow = shallow
 	}
 
 	return nil

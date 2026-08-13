@@ -2,9 +2,14 @@ version: 2
 
 project_name: git-trim
 
+env:
+  - GO111MODULE=on
+
 before:
   hooks:
     - go mod tidy
+    - go mod verify
+    - go test ./...
 
 builds:
   - id: git-trim
@@ -19,67 +24,193 @@ builds:
     goarch:
       - amd64
       - arm64
+    flags:
+      - -trimpath
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
-      - -X main.commit={{.ShortCommit}}
+      - -X main.commit={{.Commit}}
       - -X main.date={{.Date}}
+      - -X main.builtBy=goreleaser
+    mod_timestamp: '{{ .CommitTimestamp }}'
 
 archives:
   - id: default
-    format: tar.gz
-    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+    ids:
+      - git-trim
+    formats:
+      - tar.gz
     format_overrides:
       - goos: windows
-        format: zip
+        formats:
+          - zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- if eq .Os "darwin" }}macOS
+      {{- else }}{{ .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     files:
-      - README.md
-      - LICENSE
-      - docs/*
+      - LICENSE*
+      - README*
+      - CHANGELOG*
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: checksums.txt
+  algorithm: sha256
 
 snapshot:
   version_template: '{{ incpatch .Version }}-next'
 
 changelog:
+  use: github-native
   sort: asc
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Performance
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: Docs
+      regexp: '^.*?docs?(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: Other Changes
+      order: 999
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
       - '^chore:'
-      - Merge pull request
-      - Merge branch
+      - '^style:'
+      - '^test:'
+      - '^ci:'
+      - '^Merge '
 
-brews:
-  - repository:
-      owner: dominikospritis
+release:
+  github:
+    owner: entro314-labs
+    name: git-trim-go
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## git-trim {{ .Tag }}
+
+    Built from commit `{{ .FullCommit }}` on {{ .Date }}.
+  footer: |
+    ### Install
+
+    - Homebrew: `brew install entro314-labs/tap/git-trim`
+    - AUR: `yay -S git-trim-bin`
+    - Winget: `winget install Entro314Labs.GitTrim`
+    - Go: `go install github.com/dominikospritis/git-trim/cmd/git-trim@{{ .Tag }}`
+
+homebrew_casks:
+  - name: git-trim
+    ids:
+      - default
+    repository:
+      owner: entro314-labs
       name: homebrew-tap
-    name: git-trim
-    homepage: https://github.com/dominikospritis/git-trim
-    description: Automatically clean up merged and stray Git branches
+      branch: main
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
+    homepage: https://github.com/entro314-labs/git-trim-go
+    description: Automatically clean up merged and stray Git branches.
     license: MIT
-    install: |
-      bin.install "git-trim"
+    binaries:
+      - git-trim
+    commit_msg_template: 'Brew cask update for {{ .ProjectName }} version {{ .Tag }}'
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    skip_upload: auto
+
+aurs:
+  - name: git-trim-bin
+    ids:
+      - default
+    homepage: https://github.com/entro314-labs/git-trim-go
+    description: Automatically clean up merged and stray Git branches.
+    maintainers:
+      - Dominikos Pritis <dominikospritis@users.noreply.github.com>
+    license: MIT
+    private_key: '{{ .Env.AUR_SSH_PRIVATE_KEY }}'
+    git_url: ssh://aur@aur.archlinux.org/git-trim-bin.git
+    provides:
+      - git-trim
+    conflicts:
+      - git-trim
+    depends:
+      - git
+    commit_msg_template: 'Update {{ .ProjectName }} to {{ .Tag }}'
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    skip_upload: auto
+
+winget:
+  - name: git-trim
+    publisher: Entro314 Labs
+    publisher_url: https://github.com/entro314-labs
+    publisher_support_url: https://github.com/entro314-labs/git-trim-go/issues
+    package_identifier: Entro314Labs.GitTrim
+    short_description: Automatically clean up merged and stray Git branches.
+    description: |
+      git-trim is a companion tool to git fetch --prune that cleans up local
+      branches whose upstreams were merged or deleted, with safety controls for
+      protected branches and multi-workflow repositories.
+    homepage: https://github.com/entro314-labs/git-trim-go
+    license: MIT
+    license_url: https://github.com/entro314-labs/git-trim-go/blob/main/LICENSE
+    release_notes: '{{ .Changelog }}'
+    release_notes_url: https://github.com/entro314-labs/git-trim-go/releases/tag/{{ .Tag }}
+    tags:
+      - git
+      - cli
+      - developer-tools
+    repository:
+      owner: microsoft
+      name: winget-pkgs
+      branch: master
+      token: '{{ .Env.WINGET_GITHUB_TOKEN }}'
+      pull_request:
+        enabled: true
+        draft: true
+    commit_author:
+      name: goreleaserbot
+      email: bot@goreleaser.com
+    skip_upload: auto
 
 nfpms:
   - id: packages
     package_name: git-trim
-    vendor: Dominikos Pritis
-    homepage: https://github.com/dominikospritis/git-trim
-    maintainer: Dominikos Pritis
-    description: Automatically clean up merged and stray Git branches
+    file_name_template: '{{ .ConventionalFileName }}'
+    homepage: https://github.com/entro314-labs/git-trim-go
+    description: Automatically clean up merged and stray Git branches.
+    maintainer: Dominikos Pritis <dominikospritis@users.noreply.github.com>
     license: MIT
+    vendor: entro314-labs
     formats:
       - deb
       - rpm
+      - apk
     bindir: /usr/bin
 
-release:
-  github:
-    owner: dominikospritis
-    name: git-trim
-  draft: true
-  prerelease: auto
+sboms:
+  - id: archives
+    artifacts: archive
+  - id: source
+    artifacts: source
+
+source:
+  enabled: true
+  name_template: '{{ .ProjectName }}_{{ .Version }}_source'
+  format: tar.gz
+
+metadata:
+  mod_timestamp: '{{ .CommitTimestamp }}'

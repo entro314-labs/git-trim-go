@@ -3,32 +3,200 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v1.0.0)'
+        required: false
+        type: string
+      config:
+        description: 'GoReleaser config profile'
+        required: false
+        default: stable
+        type: choice
+        options:
+          - stable
+          - edge
+          - unstable
+      skip_publish:
+        description: 'Skip publishing release assets (build only)'
+        required: false
+        default: false
+        type: boolean
+      snapshot:
+        description: 'Run in snapshot mode'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
+  packages: write
+  id-token: write
+
+env:
+  GO_VERSION: '1.26.5'
 
 jobs:
-  goreleaser:
+  release:
     name: Release
     runs-on: ubuntu-latest
+    outputs:
+      published: ${{ steps.release-mode.outputs.should_publish }}
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.23'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run GoReleaser
+      - name: Run tests
+        run: |
+          go mod download
+          go mod verify
+          go test -v ./...
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Verify Buildx
+        run: docker buildx ls
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@v0.22.2
+
+      - name: Resolve release mode
+        id: release-mode
+        env:
+          INPUT_CONFIG: ${{ github.event.inputs.config }}
+          INPUT_SKIP_PUBLISH: ${{ github.event.inputs.skip_publish }}
+          INPUT_SNAPSHOT: ${{ github.event.inputs.snapshot }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          CONFIG="${INPUT_CONFIG:-stable}"
+          SKIP_PUBLISH="${INPUT_SKIP_PUBLISH:-false}"
+          SNAPSHOT="${INPUT_SNAPSHOT:-false}"
+          PRE_RELEASE=false
+
+          if [[ "$REF_NAME" == *-alpha* || "$REF_NAME" == *-beta* || "$REF_NAME" == *-rc* ]]; then
+            PRE_RELEASE=true
+          fi
+
+          CONFIG_FILE=".goreleaser.yml"
+          case "$CONFIG" in
+            edge) CONFIG_FILE=".goreleaser-edge.yml" ;;
+            unstable) CONFIG_FILE=".goreleaser-unstable.yml" ;;
+          esac
+
+          if [[ "$PRE_RELEASE" == "true" && "$CONFIG" == "stable" ]]; then
+            CONFIG_FILE=".goreleaser-unstable.yml"
+          fi
+
+          if [[ ! -f "$CONFIG_FILE" ]]; then
+            echo "Config $CONFIG_FILE not found, falling back to .goreleaser.yml"
+            CONFIG_FILE=".goreleaser.yml"
+          fi
+
+          SHOULD_PUBLISH=true
+          if [[ "$SKIP_PUBLISH" == "true" || "$PRE_RELEASE" == "true" || "$CONFIG" == "unstable" ]]; then
+            SHOULD_PUBLISH=false
+          fi
+
+          echo "config_file=$CONFIG_FILE" >> "$GITHUB_OUTPUT"
+          echo "should_publish=$SHOULD_PUBLISH" >> "$GITHUB_OUTPUT"
+          echo "snapshot=$SNAPSHOT" >> "$GITHUB_OUTPUT"
+
+      - name: Run GoReleaser (publish)
+        if: ${{ steps.release-mode.outputs.should_publish == 'true' }}
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: latest
-          args: release --clean
+          version: '~> v2'
+          args: >
+            release
+            --clean
+            --config ${{ steps.release-mode.outputs.config_file }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+      - name: Run GoReleaser (skip publish)
+        if: ${{ steps.release-mode.outputs.should_publish != 'true' }}
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: '~> v2'
+          args: >
+            release
+            --clean
+            --config ${{ steps.release-mode.outputs.config_file }}
+            --skip=publish
+            ${{ steps.release-mode.outputs.snapshot == 'true' && '--snapshot' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          WINGET_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: release-artifacts
+          path: dist/*
+          retention-days: 30
+
+  verify:
+    name: Verify Release
+    needs: release
+    if: ${{ needs.release.outputs.published == 'true' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for release
+        run: sleep 30
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Verify GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ github.ref_name }}"
+          echo "Checking release for tag: $TAG"
+          gh release view "$TAG" --repo "${{ github.repository }}"
+
+      - name: Test Docker image
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+          docker run --rm ghcr.io/${{ github.repository }}:${{ github.ref_name }} --version
+        continue-on-error: true

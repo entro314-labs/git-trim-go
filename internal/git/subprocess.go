@@ -74,6 +74,28 @@ func (r *Repository) UpdateRemotes(ctx context.Context) error {
 	return err
 }
 
+// RunGC runs garbage collection to prune history and optimize repo
+func (r *Repository) RunGC(ctx context.Context) error {
+	_, err := r.RunGit(ctx, "gc", "--prune=now", "--aggressive")
+	return err
+}
+
+// RunShallow truncates the repository to a shallow clone history
+func (r *Repository) RunShallow(ctx context.Context) error {
+	_, err := r.RunGit(ctx, "fetch", "--depth=1")
+	if err != nil {
+		return err
+	}
+
+	_, err = r.RunGit(ctx, "reflog", "expire", "--expire=all", "--all")
+	if err != nil {
+		return err
+	}
+
+	_, err = r.RunGit(ctx, "gc", "--prune=all")
+	return err
+}
+
 // UpdateRemote runs git fetch --prune for a specific remote
 func (r *Repository) UpdateRemote(ctx context.Context, remote string) error {
 	_, err := r.RunGit(ctx, "fetch", "--prune", remote)

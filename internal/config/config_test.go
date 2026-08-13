@@ -262,3 +262,30 @@ func TestRepoGitConfigReader_GetIntTrimsWhitespace(t *testing.T) {
 		t.Fatalf("expected int to parse trimmed value, got %d", val)
 	}
 }
+
+func TestLoadFromGitConfig_GcAndShallow(t *testing.T) {
+	reader := config.RepoGitConfigReader{
+		RunGit: func(ctx context.Context, args ...string) (string, error) {
+			if len(args) >= 4 && args[3] == "trim.gc" {
+				return "true", nil
+			}
+			if len(args) >= 4 && args[3] == "trim.shallow" {
+				return "true", nil
+			}
+			return "", nil
+		},
+	}
+
+	cfg := config.DefaultConfig()
+	err := config.LoadFromGitConfig(context.Background(), &reader, cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !cfg.Gc {
+		t.Errorf("expected Gc to be parsed as true")
+	}
+	if !cfg.Shallow {
+		t.Errorf("expected Shallow to be parsed as true")
+	}
+}

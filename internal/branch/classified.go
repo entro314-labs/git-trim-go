@@ -30,32 +30,36 @@ type MergedLocal struct {
 	Branch LocalBranch
 }
 
-func (m MergedLocal) Type() ClassificationType                        { return TypeMergedLocal }
-func (m MergedLocal) Description() string                             { return fmt.Sprintf("merged local: %s", m.Branch.Name()) }
-func (m MergedLocal) LocalBranch() *LocalBranch                       { return &m.Branch }
-func (m MergedLocal) RemoteTrackingBranch() *RemoteTrackingBranch     { return nil }
-func (m MergedLocal) RemoteBranch() *RemoteBranch                     { return nil }
+func (m MergedLocal) Type() ClassificationType                    { return TypeMergedLocal }
+func (m MergedLocal) Description() string                         { return fmt.Sprintf("merged local: %s", m.Branch.Name()) }
+func (m MergedLocal) LocalBranch() *LocalBranch                   { return &m.Branch }
+func (m MergedLocal) RemoteTrackingBranch() *RemoteTrackingBranch { return nil }
+func (m MergedLocal) RemoteBranch() *RemoteBranch                 { return nil }
 
 // Stray represents a local branch whose upstream is gone but is not merged
 type Stray struct {
 	Branch LocalBranch
 }
 
-func (s Stray) Type() ClassificationType                        { return TypeStray }
-func (s Stray) Description() string                             { return fmt.Sprintf("stray (upstream gone, not merged): %s", s.Branch.Name()) }
-func (s Stray) LocalBranch() *LocalBranch                       { return &s.Branch }
-func (s Stray) RemoteTrackingBranch() *RemoteTrackingBranch     { return nil }
-func (s Stray) RemoteBranch() *RemoteBranch                     { return nil }
+func (s Stray) Type() ClassificationType { return TypeStray }
+func (s Stray) Description() string {
+	return fmt.Sprintf("stray (upstream gone, not merged): %s", s.Branch.Name())
+}
+func (s Stray) LocalBranch() *LocalBranch                   { return &s.Branch }
+func (s Stray) RemoteTrackingBranch() *RemoteTrackingBranch { return nil }
+func (s Stray) RemoteBranch() *RemoteBranch                 { return nil }
 
 // MergedRemoteTracking represents a remote-tracking branch that has been merged
 type MergedRemoteTracking struct {
 	Branch RemoteTrackingBranch
 }
 
-func (m MergedRemoteTracking) Type() ClassificationType                        { return TypeMergedRemoteTracking }
-func (m MergedRemoteTracking) Description() string                             { return fmt.Sprintf("merged remote: %s", m.Branch.Name()) }
-func (m MergedRemoteTracking) LocalBranch() *LocalBranch                       { return nil }
-func (m MergedRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch     { return &m.Branch }
+func (m MergedRemoteTracking) Type() ClassificationType { return TypeMergedRemoteTracking }
+func (m MergedRemoteTracking) Description() string {
+	return fmt.Sprintf("merged remote: %s", m.Branch.Name())
+}
+func (m MergedRemoteTracking) LocalBranch() *LocalBranch                   { return nil }
+func (m MergedRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch { return &m.Branch }
 func (m MergedRemoteTracking) RemoteBranch() *RemoteBranch {
 	rb := FromRemoteTracking(m.Branch)
 	return &rb
@@ -71,8 +75,8 @@ func (d DivergedRemoteTracking) Type() ClassificationType { return TypeDivergedR
 func (d DivergedRemoteTracking) Description() string {
 	return fmt.Sprintf("diverged: local %s merged, upstream %s diverged", d.Local.Name(), d.Upstream.Name())
 }
-func (d DivergedRemoteTracking) LocalBranch() *LocalBranch                       { return &d.Local }
-func (d DivergedRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch     { return &d.Upstream }
+func (d DivergedRemoteTracking) LocalBranch() *LocalBranch                   { return &d.Local }
+func (d DivergedRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch { return &d.Upstream }
 func (d DivergedRemoteTracking) RemoteBranch() *RemoteBranch {
 	rb := FromRemoteTracking(d.Upstream)
 	return &rb
@@ -84,11 +88,13 @@ type MergedDirectFetch struct {
 	Remote RemoteBranch
 }
 
-func (m MergedDirectFetch) Type() ClassificationType                        { return TypeMergedDirectFetch }
-func (m MergedDirectFetch) Description() string                             { return fmt.Sprintf("merged direct-fetch: %s -> %s", m.Local.Name(), m.Remote.String()) }
-func (m MergedDirectFetch) LocalBranch() *LocalBranch                       { return &m.Local }
-func (m MergedDirectFetch) RemoteTrackingBranch() *RemoteTrackingBranch     { return nil }
-func (m MergedDirectFetch) RemoteBranch() *RemoteBranch                     { return &m.Remote }
+func (m MergedDirectFetch) Type() ClassificationType { return TypeMergedDirectFetch }
+func (m MergedDirectFetch) Description() string {
+	return fmt.Sprintf("merged direct-fetch: %s -> %s", m.Local.Name(), m.Remote.String())
+}
+func (m MergedDirectFetch) LocalBranch() *LocalBranch                   { return &m.Local }
+func (m MergedDirectFetch) RemoteTrackingBranch() *RemoteTrackingBranch { return nil }
+func (m MergedDirectFetch) RemoteBranch() *RemoteBranch                 { return &m.Remote }
 
 // DivergedDirectFetch represents a hub-cli style branch where local is merged but remote diverged
 type DivergedDirectFetch struct {
@@ -100,32 +106,38 @@ func (d DivergedDirectFetch) Type() ClassificationType { return TypeDivergedDire
 func (d DivergedDirectFetch) Description() string {
 	return fmt.Sprintf("diverged direct-fetch: local %s merged, remote %s diverged", d.Local.Name(), d.Remote.String())
 }
-func (d DivergedDirectFetch) LocalBranch() *LocalBranch                       { return &d.Local }
-func (d DivergedDirectFetch) RemoteTrackingBranch() *RemoteTrackingBranch     { return nil }
-func (d DivergedDirectFetch) RemoteBranch() *RemoteBranch                     { return &d.Remote }
+func (d DivergedDirectFetch) LocalBranch() *LocalBranch                   { return &d.Local }
+func (d DivergedDirectFetch) RemoteTrackingBranch() *RemoteTrackingBranch { return nil }
+func (d DivergedDirectFetch) RemoteBranch() *RemoteBranch                 { return &d.Remote }
 
 // MergedNonTrackingLocal represents a non-tracking local branch that is merged
 type MergedNonTrackingLocal struct {
 	Branch LocalBranch
 }
 
-func (m MergedNonTrackingLocal) Type() ClassificationType                        { return TypeMergedNonTrackingLocal }
-func (m MergedNonTrackingLocal) Description() string                             { return fmt.Sprintf("merged non-tracking local: %s", m.Branch.Name()) }
-func (m MergedNonTrackingLocal) LocalBranch() *LocalBranch                       { return &m.Branch }
-func (m MergedNonTrackingLocal) RemoteTrackingBranch() *RemoteTrackingBranch     { return nil }
-func (m MergedNonTrackingLocal) RemoteBranch() *RemoteBranch                     { return nil }
+func (m MergedNonTrackingLocal) Type() ClassificationType { return TypeMergedNonTrackingLocal }
+func (m MergedNonTrackingLocal) Description() string {
+	return fmt.Sprintf("merged non-tracking local: %s", m.Branch.Name())
+}
+func (m MergedNonTrackingLocal) LocalBranch() *LocalBranch                   { return &m.Branch }
+func (m MergedNonTrackingLocal) RemoteTrackingBranch() *RemoteTrackingBranch { return nil }
+func (m MergedNonTrackingLocal) RemoteBranch() *RemoteBranch                 { return nil }
 
 // MergedNonUpstreamRemoteTracking represents an orphan remote-tracking branch that is merged
 type MergedNonUpstreamRemoteTracking struct {
 	Branch RemoteTrackingBranch
 }
 
-func (m MergedNonUpstreamRemoteTracking) Type() ClassificationType { return TypeMergedNonUpstreamRemoteTracking }
+func (m MergedNonUpstreamRemoteTracking) Type() ClassificationType {
+	return TypeMergedNonUpstreamRemoteTracking
+}
 func (m MergedNonUpstreamRemoteTracking) Description() string {
 	return fmt.Sprintf("merged orphan remote-tracking: %s", m.Branch.Name())
 }
-func (m MergedNonUpstreamRemoteTracking) LocalBranch() *LocalBranch                       { return nil }
-func (m MergedNonUpstreamRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch     { return &m.Branch }
+func (m MergedNonUpstreamRemoteTracking) LocalBranch() *LocalBranch { return nil }
+func (m MergedNonUpstreamRemoteTracking) RemoteTrackingBranch() *RemoteTrackingBranch {
+	return &m.Branch
+}
 func (m MergedNonUpstreamRemoteTracking) RemoteBranch() *RemoteBranch {
 	rb := FromRemoteTracking(m.Branch)
 	return &rb
