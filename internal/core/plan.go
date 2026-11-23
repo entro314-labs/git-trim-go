@@ -240,20 +240,20 @@ func (p *TrimPlan) Summary() string {
 	var sb strings.Builder
 
 	if len(p.ToDelete) > 0 {
-		sb.WriteString(fmt.Sprintf("Branches to delete: %d\n", len(p.ToDelete)))
+		fmt.Fprintf(&sb, "Branches to delete: %d\n", len(p.ToDelete))
 		for _, cb := range p.ToDelete {
-			sb.WriteString(fmt.Sprintf("  - %s\n", cb.Description()))
+			fmt.Fprintf(&sb, "  - %s\n", cb.Description())
 		}
 	}
 
 	if len(p.Preserved) > 0 {
-		sb.WriteString(fmt.Sprintf("\nPreserved branches: %d\n", len(p.Preserved)))
+		fmt.Fprintf(&sb, "\nPreserved branches: %d\n", len(p.Preserved))
 		for _, pv := range p.Preserved {
 			details := ""
 			if pv.Details != "" {
 				details = fmt.Sprintf(" (%s)", pv.Details)
 			}
-			sb.WriteString(fmt.Sprintf("  - %s: %s%s\n", pv.Branch.Description(), pv.Reason, details))
+			fmt.Fprintf(&sb, "  - %s: %s%s\n", pv.Branch.Description(), pv.Reason, details)
 		}
 	}
 

@@ -28,7 +28,7 @@ func NewTestRepo(t *testing.T) *TestRepo {
 		t.Fatalf("failed to create origin dir: %v", err)
 	}
 
-	cmd := exec.Command("git", "init", "--bare")
+	cmd := exec.Command("git", "init", "--bare", "--initial-branch=main")
 	cmd.Dir = originDir
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("failed to init origin: %v\n%s", err, out)
@@ -46,6 +46,9 @@ func NewTestRepo(t *testing.T) *TestRepo {
 		Origin:  originDir,
 	}
 
+	// The tests refer to the default branch as "main"; do not depend on the
+	// host's init.defaultBranch setting.
+	repo.Git("symbolic-ref", "HEAD", "refs/heads/main")
 	repo.Git("config", "user.email", "test@example.com")
 	repo.Git("config", "user.name", "Test User")
 

@@ -51,7 +51,7 @@ func DisplayPlan(plan *core.TrimPlan, dryRun bool) {
 
 	if len(strayBranches) > 0 {
 		PrintSubHeader("Stray branches (upstream gone, not merged)")
-		ColorWarning.Println("  These branches have unmerged commits!")
+		_, _ = ColorWarning.Println("  These branches have unmerged commits!")
 		for _, cb := range strayBranches {
 			displayClassifiedBranch(cb)
 		}
@@ -158,17 +158,17 @@ func DisplayResults(results []core.DeleteResult) {
 	for _, r := range results {
 		if r.Success {
 			successCount++
-			ColorSuccess.Printf("  ✓ Deleted %s\n", r.Branch)
+			_, _ = ColorSuccess.Printf("  ✓ Deleted %s\n", r.Branch)
 		} else {
 			failCount++
-			ColorError.Printf("  ✗ Failed to delete %s: %v\n", r.Branch, r.Error)
+			_, _ = ColorError.Printf("  ✗ Failed to delete %s: %v\n", r.Branch, r.Error)
 		}
 	}
 
 	fmt.Println()
 	if failCount == 0 {
-		ColorSuccess.Printf("Successfully deleted %d branch(es)\n", successCount)
+		_, _ = ColorSuccess.Printf("Successfully deleted %d branch(es)\n", successCount)
 	} else {
-		ColorWarning.Printf("Deleted %d branch(es), %d failed\n", successCount, failCount)
+		_, _ = ColorWarning.Printf("Deleted %d branch(es), %d failed\n", successCount, failCount)
 	}
 }

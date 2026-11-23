@@ -61,16 +61,16 @@ func ConfirmWithDefault(message string, defaultValue bool) (bool, error) {
 // PrintHeader prints a section header
 func PrintHeader(title string) {
 	fmt.Println()
-	ColorInfo.Println("═══════════════════════════════════════════════════")
-	ColorInfo.Printf("  %s\n", title)
-	ColorInfo.Println("═══════════════════════════════════════════════════")
+	_, _ = ColorInfo.Println("═══════════════════════════════════════════════════")
+	_, _ = ColorInfo.Printf("  %s\n", title)
+	_, _ = ColorInfo.Println("═══════════════════════════════════════════════════")
 	fmt.Println()
 }
 
 // PrintSubHeader prints a sub-section header
 func PrintSubHeader(title string) {
 	fmt.Println()
-	ColorInfo.Printf("─── %s ───\n", title)
+	_, _ = ColorInfo.Printf("─── %s ───\n", title)
 }
 
 // PrintBranch prints a branch name with formatting
@@ -85,30 +85,30 @@ func PrintRemote(remoteName string) string {
 
 // PrintWarning prints a warning message
 func PrintWarning(message string) {
-	ColorWarning.Printf("⚠ %s\n", message)
+	_, _ = ColorWarning.Printf("⚠ %s\n", message)
 }
 
 // PrintError prints an error message
 func PrintError(message string) {
-	ColorError.Printf("✗ %s\n", message)
+	_, _ = ColorError.Printf("✗ %s\n", message)
 }
 
 // PrintSuccess prints a success message
 func PrintSuccess(message string) {
-	ColorSuccess.Printf("✓ %s\n", message)
+	_, _ = ColorSuccess.Printf("✓ %s\n", message)
 }
 
 // PrintInfo prints an info message
 func PrintInfo(message string) {
-	ColorInfo.Printf("ℹ %s\n", message)
+	_, _ = ColorInfo.Printf("ℹ %s\n", message)
 }
 
 // PrintDryRun prints a dry-run notice
 func PrintDryRun() {
 	fmt.Println()
-	ColorDryRun.Println("╔═══════════════════════════════════════════════════╗")
-	ColorDryRun.Println("║              DRY RUN - No changes made            ║")
-	ColorDryRun.Println("╚═══════════════════════════════════════════════════╝")
+	_, _ = ColorDryRun.Println("╔═══════════════════════════════════════════════════╗")
+	_, _ = ColorDryRun.Println("║              DRY RUN - No changes made            ║")
+	_, _ = ColorDryRun.Println("╚═══════════════════════════════════════════════════╝")
 	fmt.Println()
 }
 
