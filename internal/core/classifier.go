@@ -165,10 +165,7 @@ func (c *Classifier) classifyTrackingBranch(ctx context.Context, tb branch.Track
 		results = append(results, branch.MergedLocal{Branch: tb.Local})
 		results = append(results, branch.MergedRemoteTracking{Branch: tb.Upstream})
 	} else if localMerged.IsMerged() && !upstreamMerged.IsMerged() {
-		results = append(results, branch.DivergedRemoteTracking{
-			Local:    tb.Local,
-			Upstream: tb.Upstream,
-		})
+		results = append(results, branch.DivergedRemoteTracking(tb))
 	} else if !localMerged.IsMerged() && upstreamMerged.IsMerged() {
 		results = append(results, branch.Stray{Branch: tb.Local})
 		results = append(results, branch.MergedRemoteTracking{Branch: tb.Upstream})
@@ -225,10 +222,7 @@ func (c *Classifier) classifyDirectFetchBranch(ctx context.Context, dfb branch.D
 
 	if !remoteExists {
 		if localMerged.IsMerged() {
-			results = append(results, branch.MergedDirectFetch{
-				Local:  dfb.Local,
-				Remote: dfb.Remote,
-			})
+			results = append(results, branch.MergedDirectFetch(dfb))
 		}
 		return results, nil
 	}
@@ -240,15 +234,9 @@ func (c *Classifier) classifyDirectFetchBranch(ctx context.Context, dfb branch.D
 
 	if localMerged.IsMerged() {
 		if localHash == remoteHash {
-			results = append(results, branch.MergedDirectFetch{
-				Local:  dfb.Local,
-				Remote: dfb.Remote,
-			})
+			results = append(results, branch.MergedDirectFetch(dfb))
 		} else {
-			results = append(results, branch.DivergedDirectFetch{
-				Local:  dfb.Local,
-				Remote: dfb.Remote,
-			})
+			results = append(results, branch.DivergedDirectFetch(dfb))
 		}
 	}
 
