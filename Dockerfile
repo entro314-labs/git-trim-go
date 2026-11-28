@@ -1,6 +1,6 @@
 # git-trim Docker Image - Multi-stage build
 # Build stage
-FROM golang:1.26.5-alpine AS builder
+FROM golang:1.27.4-alpine AS builder
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 go build -v -trimpath \
     ./cmd/git-trim
 
 # Runtime stage
-FROM alpine:3.23
+FROM alpine:3.24
 
 # Install runtime dependencies
 RUN apk add --no-cache git ca-certificates tzdata
