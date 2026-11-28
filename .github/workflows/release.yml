@@ -132,7 +132,7 @@ jobs:
 
       - name: Run GoReleaser (publish)
         if: ${{ steps.release-mode.outputs.should_publish == 'true' }}
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: '~> v2'
@@ -148,7 +148,7 @@ jobs:
 
       - name: Run GoReleaser (skip publish)
         if: ${{ steps.release-mode.outputs.should_publish != 'true' }}
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: '~> v2'

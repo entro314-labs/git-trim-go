@@ -148,14 +148,14 @@ jobs:
         uses: anchore/sbom-action/download-syft@v0.24.4
 
       - name: Check config
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
           args: check
 
       - name: Test snapshot build
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: "~> v2"
