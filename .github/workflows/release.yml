@@ -85,7 +85,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install Syft
-        uses: anchore/sbom-action/download-syft@v0.22.2
+        uses: anchore/sbom-action/download-syft@v0.24.4
 
       - name: Resolve release mode
         id: release-mode
